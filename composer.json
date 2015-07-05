@@ -1,0 +1,14 @@
+{
+    "name": "prime/prime",
+    "type": "library",
+    "require": {
+        "php": ">=5.4.0",
+        "zendframework/zend-diactoros": "^1.1",
+        "container-interop/container-interop": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Prime\\": "src/"
+        }
+    }
+}
