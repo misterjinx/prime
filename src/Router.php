@@ -3,12 +3,16 @@
 namespace Prime;
 
 use Prime\Router\Route;
-use Prime\Http\Request;
+use Prime\Router\Route\Exception\InvalidRouteException;
+use Psr\Http\Message\ServerRequestInterface;
 
 class Router
 {
     /**
-     * List of all routes defined
+     * List of all defined routes. The key is the name of the route and the
+     * value will consist of an array with the route as the first element and
+     * the HTTP method(s) as the second element.
+     * 
      * @var array
      */
     protected $routes = array();
@@ -26,17 +30,34 @@ class Router
         }        
     }
 
-    public function add($name, Route $route)
+    public function add($name, Route $route, $httpMethod = null)
     {
-        $this->routes[$name] = $route;
+        if ($httpMethod !== null && !(is_string($httpMethod) || is_array($httpMethod))) {
+            throw new InvalidRouteException('The HTTP method has to be a string or an array');
+        }
+
+        if ($httpMethod && !is_array($httpMethod)) {
+            $httpMethod = array_map('strtolower', array($httpMethod));
+        }
+        
+        $this->routes[$name] = array(
+            'route' => $route, 'method' => $httpMethod
+        );
     }
 
-    public function match(Request $request)
+    public function match(ServerRequestInterface $request)
     {
-        $path = $request->getUri()->getPath();
+        $method = $request->getMethod();
+        $path   = $request->getUri()->getPath();        
 
         foreach ($this->routes as $name => $route) {
-            if ($route->match($path)) {
+            // check first if any http method restrictions
+            if ($route['method'] && !in_array(strtolower($method), $route['method'])) {
+                break;
+            }
+
+            // then try to match the path
+            if ($route['route']->match($path)) {
                 $this->matchedRoute = $name;
                 break;
             }
@@ -58,7 +79,7 @@ class Router
 
     public function getRoute($name)
     {
-        return $this->routes[$name];
+        return $this->routes[$name]['route'];
     }
 
     public function routesCount()

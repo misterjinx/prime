@@ -5,13 +5,16 @@ namespace Prime;
 use Prime\Container;
 use Prime\Container\ContainerInterface;
 use Prime\Router;
-use Prime\Http\Request;
-use Prime\Http\Response as PrimeResponse;
 use Prime\Dispatcher;
+use Prime\CallbackDispatcher;
 use Prime\Dispatcher\DispatcherInterface;
 use Prime\EventManager\EventManagerInterface;
 use Zend\Diactoros\ServerRequest;
+use Zend\Diactoros\ServerRequestFactory;
 use Zend\Diactoros\Response;
+use Zend\Diactoros\Response\SapiEmitter;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 
 class Application
@@ -23,15 +26,15 @@ class Application
         $this->container = $container;
         
         if (!$this->container->has('router')) {
-            $this->setRouter(new Router());
+            $this->setRouter(new Router(true));
         }
 
         if (!$this->container->has('request')) {
-            $this->setRequest(new Request());
+            $this->setRequest(ServerRequestFactory::fromGlobals());
         }
 
         if (!$this->container->has('response')) {
-            $this->setResponse(new PrimeResponse());
+            $this->setResponse(new Response());
         }
 
         if (!$this->container->has('dispatcher')) {
@@ -44,12 +47,12 @@ class Application
         $this->container->set('router', $router);
     }
 
-    public function setRequest(ServerRequest $request)
+    public function setRequest(ServerRequestInterface $request)
     {
         $this->container->set('request', $request);
     }
 
-    public function setResponse(Response $response)
+    public function setResponse(ResponseInterface $response)
     {
         $this->container->set('response', $response);
     }
@@ -72,18 +75,23 @@ class Application
         $dispatcher = $this->container->get('dispatcher');
 
         $router->match($request);
-        
+
         $matched = $router->getMatchedRoute();
         if ($matched) {
-            $dispatcher->setControllerName($matched->getController());
-            $dispatcher->setActionName($matched->getAction());
-            $dispatcher->setParams($matched->getMatches());
+            $dispatcher->setHandler(array(
+                'controller' => $matched->getController(),
+                'action' => $matched->getAction(),
+                'params' => $matched->getMatches()
+            ));
         }
 
         try {
-            $dispatcher->dispatch($request, $response);
-        } catch (\Exception $e) {
-            $dispatcher->dispatchError($e);
+            $response = $dispatcher->dispatch($request, $response);
+        } catch (\Exception $exception) {
+            $response = $dispatcher->dispatchError($request, $response, $exception);
         }
+
+        $emitter = new SapiEmitter();
+        $emitter->emit($response);
     }
 }

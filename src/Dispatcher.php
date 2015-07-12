@@ -21,7 +21,7 @@ class Dispatcher implements DispatcherInterface
 
     protected $controller;
     protected $action;
-    protected $params = array();
+    protected $params;
 
     protected $finished = false;
     protected $forwarded = false;
@@ -40,6 +40,13 @@ class Dispatcher implements DispatcherInterface
      */
     protected $dispatchLimit = 32;
 
+    /**
+     * Dispatch the provided request 
+     * 
+     * @param  ServerRequestInterface $request
+     * @param  ResponseInterface      $response
+     * @return 
+     */
     public function dispatch(ServerRequestInterface $request, ResponseInterface $response)
     {
         while (!$this->isDispatched()) {
@@ -83,23 +90,31 @@ class Dispatcher implements DispatcherInterface
 
                         // done
                         $this->setDispatched();
+
+                        // return the response
+                        return $object->getResponse();
                     } else {
                         throw new HandlerNotFoundException(sprintf(
                             '%s has no action %s defined', 
-                            $controllerClassName, $actionMethodName));
+                            $controllerClassName, $actionMethodName), 404);
                     }
                 } else {
                     throw new HandlerNotFoundException(sprintf('%s does not exists',
-                        $controllerClassName));
+                        $controllerClassName), 404);
                 }
             } else {
-                throw new DispatchLimitException('Dispatch limit has been reached');
+                throw new DispatchLimitException('Dispatch limit has been reached', 500);
             }            
         }
     }
 
-    public function dispatchError($exception)
+    public function dispatchError(ServerRequestInterface $request, ResponseInterface $response, $exception)
     {        
+        if ($exception->getCode() === 0) {
+            // most probably uncaught exception during execution, so set 500 error code
+            $exception = new \RuntimeException($exception->getMessage(), 500, $exception);
+        }
+
         $error = new \ArrayObject(array(
             'code' => $exception->getCode(),
             'exception' => $exception
@@ -108,23 +123,23 @@ class Dispatcher implements DispatcherInterface
         $this->setControllerName($this->getErrorController());
         $this->setActionName($this->getErrorAction());
         $this->setParam('error', $error);
-        
-        $this->dispatch();
+
+        return $this->dispatch($request, $response->withStatus($exception->getCode()));
     }
 
-    public function forward($data = array())
+    public function forward($handler = array(), ServerRequestInterface $request, ResponseInterface $response)
     {
-        if (isset($data['controller'])) {
-            $this->setControllerName($data['controller']);
+        if (isset($handler['controller'])) {
+            $this->setControllerName($handler['controller']);
         }
 
-        if (isset($data['action'])) {
-            $this->setActionName($data['action']);
+        if (isset($handler['action'])) {
+            $this->setActionName($handler['action']);
         }
 
         $this->setDispatched(false);
         $this->setForwarded();
-        $this->dispatch();
+        $this->dispatch($request, $response);
     }
 
     public function isDispatched()
@@ -147,6 +162,21 @@ class Dispatcher implements DispatcherInterface
         return $this->forwarded;
     }
 
+    public function setHandler($handler = array())
+    {
+        if (isset($handler['controller'])) {
+            $this->setControllerName($handler['controller']);
+        }
+
+        if (isset($handler['action'])) {
+            $this->setActionName($handler['action']);
+        }
+
+        if (isset($handler['params'])) {
+            $this->setParams($handler['params']);
+        }
+    }
+
     public function setControllerName($name)
     {
         $this->controller = $name;
@@ -165,26 +195,6 @@ class Dispatcher implements DispatcherInterface
     public function getActionName()
     {
         return $this->action;
-    }
-
-    public function setParams($params)
-    {
-        $this->params = $params;
-    }
-
-    public function getParams()
-    {
-        return $this->params;
-    }
-
-    public function setParam($name, $value)
-    {
-        $this->params[$name] = $value;
-    }
-
-    public function getParam($name)
-    {
-        return isset($this->params[$name]) ? $this->params[$name] : null;
     }
 
     public function getDefaultController()
@@ -222,14 +232,34 @@ class Dispatcher implements DispatcherInterface
         return $this->errorAction;
     }
 
-    public function formatControllerClassName()
+    public function setParams($params)
+    {
+        $this->params = $params;
+    }
+
+    public function getParams()
+    {
+        return $this->params;
+    }
+
+    public function setParam($name, $value)
+    {
+        $this->params[$name] = $value;
+    }
+
+    public function getParam($name)
+    {
+        return isset($this->params[$name]) ? $this->params[$name] : null;
+    }
+
+    protected function formatControllerClassName()
     {
         $name = $this->getControllerName();
 
         return $this->camelize($name) . $this->getControllerClassNameSuffix();
     }
 
-    public function formatActionMethodName()
+    protected function formatActionMethodName()
     {
         $name = $this->getActionName();
         
