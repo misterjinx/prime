@@ -53,13 +53,21 @@ class IndexController extends Controller
 {
     public function indexAction()
     {
-        echo 'index';
-        $this->forward(array('action' => 'forward'));
+        $layout = new \Prime\View(__DIR__ . '/../app/views');
+
+        $view = new \Prime\View(__DIR__ . '/../app/views');
+        $content = $view->render('index');
+
+        $layout->set($view->getCaptureTo(), $content);
+
+        $full = $layout->render('layout');
+
+        $this->response->getBody()->write($full);
     }
 
     public function forwardAction()
     {
-        echo 'forward';
+        
     }
 }
 
@@ -67,7 +75,7 @@ class ErrorController extends Controller
 {
     public function errorAction()
     {
-        echo 'error';
+        
     }
 }
 

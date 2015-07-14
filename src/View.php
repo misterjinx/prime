@@ -2,13 +2,20 @@
 
 namespace Prime;
 
-use Prime\ViewInterface;
+use Prime\View\ViewInterface;
 
 /**
  * Default view rendering engine, uses PHP as a template engine.
  */
 class View implements ViewInterface
 {
+    /**
+     * Variable name to assign the rendered template to parent
+     * 
+     * @var string
+     */
+    protected $captureTo = 'content';
+
     /**
      * Path where the templates are stored
      * 
@@ -31,6 +38,13 @@ class View implements ViewInterface
     protected $data = array();
 
     /**
+     * Child views
+     * 
+     * @var array
+     */
+    protected $children = array();
+
+    /**
      * Instantiate the view
      * 
      * @param string $templatesPath 
@@ -42,6 +56,55 @@ class View implements ViewInterface
         }
 
         $this->setFileExtension($fileExtension);
+    }
+
+    /**
+     * Set a variable by setting it directly as a property
+     *  
+     * @param string $name
+     * @param string $value
+     */
+    public function __set($name, $value)
+    {
+        return $this->set($name, $value);
+    }
+
+    /**
+     * Get a variable by accesing it directly as a property
+     * 
+     * @param  string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        return $this->get($name);
+    }
+
+    /**
+     * Check whether a variable is set
+     * 
+     * @param  string  $name 
+     * @return boolean       
+     */
+    public function __isset($name)
+    {
+        $key = (string) $name;
+        return isset($this->data[$key]);
+    }
+
+    /**
+     * Unset a variable 
+     * 
+     * @param string $name
+     */
+    public function __unset($name)
+    {
+        if (!$this->__isset($name)) {
+            return;            
+        }
+
+        $key = (string) $name;
+        unset($this->data[$key]);
     }
 
     /**
@@ -66,7 +129,7 @@ class View implements ViewInterface
     public function get($name)
     {
         $key = (string) $name;
-        if (array_key_exists($key, $data)) {
+        if (array_key_exists($key, $this->data)) {
             return $this->data[$key];
         }
 
@@ -136,13 +199,61 @@ class View implements ViewInterface
         return $this->fileExtension;
     }
 
+    /**
+     * Set variable name to assign current rendered content to parent view
+     * 
+     * @param string $name 
+     */
+    public function setCaptureTo($name)
+    {
+        $this->captureTo = (string) $name;
+    }
+
+    /**
+     * Get name of the variable to capture content to parent view
+     * 
+     * @return string
+     */
+    public function getCaptureTo()
+    {
+        return $this->captureTo;
+    }
+
+    /**
+     * Add a child to current view
+     *
+     * @todo INCOMPLETE, RENDER CHILDREN MISSING
+     * 
+     * @param ViewInterface $child     
+     * @param string        $captureTo 
+     */
+    public function addChild(ViewInterface $child, $captureTo = null)
+    {
+        if ($captureTo) {
+            $child->setCaptureTo($captureTo);
+        }
+
+        $this->children[] = $child;
+        return $this;
+    }
+
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+    public function hasChildren()
+    {
+        return !empty($this->children);
+    }
+
     public function render($template, $data = array())
     {
         if ($data && is_array($data)) {
             $this->setVars($data);
         }
 
-        $file = $this->resolveTemplate();
+        $file = $this->resolveTemplate($template);
         $content = '';
 
         try {
