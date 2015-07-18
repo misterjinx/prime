@@ -3,6 +3,8 @@
 namespace Prime;
 
 use Prime\View\ViewInterface;
+use Prime\View\Engine\EngineInterface;
+use Prime\View\Engine\PhpEngine;
 
 /**
  * Default view rendering engine, uses PHP as a template engine.
@@ -45,6 +47,13 @@ class View implements ViewInterface
     protected $children = array();
 
     /**
+     * What type of engine to use to render the views
+     * 
+     * @var EngineInterface
+     */
+    protected $engine;
+
+    /**
      * Instantiate the view
      * 
      * @param string $templatesPath 
@@ -56,6 +65,25 @@ class View implements ViewInterface
         }
 
         $this->setFileExtension($fileExtension);
+    }
+
+    public function setEngine(EngineInterface $engine)
+    {
+        $this->engine = $engine;
+    }
+
+    public function getEngine()
+    {
+        if (!$this->engine) {
+            $this->setEngine($this->getDefaultEngine());
+        }
+
+        return $this->engine;
+    }
+
+    public function getDefaultEngine()
+    {
+        return new PhpEngine();
     }
 
     /**
@@ -249,29 +277,17 @@ class View implements ViewInterface
 
     public function render($template, $data = array())
     {
+        $engine = $this->getEngine();
+        if (!$engine instanceof EngineInterface) {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid or no view rendering engine, %s provided', $engine));
+        }
+
         if ($data && is_array($data)) {
             $this->setVars($data);
         }
 
-        $file = $this->resolveTemplate($template);
-        $content = '';
-
-        try {
-            ob_start();
-            $included = include $file;
-            $content = ob_get_clean();
-        } catch (\Exception $e) {
-            ob_end_clean();
-            throw $e;
-        }
-
-        if ($included === false && empty($content)) {
-            throw new \UnexpectedValueException(sprintf(
-                'File include failed when trying to render template [%s]',
-                $file));
-        }
-
-        return $content;
+        return $engine->render($this->resolveTemplate($template), $this->getVars());
     }
 
     protected function resolveTemplate($template)

@@ -4,6 +4,7 @@ namespace Prime;
 
 use Prime\Router\Route;
 use Prime\Router\Route\Exception\InvalidRouteException;
+use Prime\Router\Route\Exception\ResourceNotFoundException;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Router
@@ -32,8 +33,14 @@ class Router
 
     public function add($name, Route $route, $httpMethod = null)
     {
+        if (!is_string($name)) {
+            throw new InvalidRouteException(sprintf(
+                'Route name has to be string, %s given', gettype($name)));
+        }
+
         if ($httpMethod !== null && !(is_string($httpMethod) || is_array($httpMethod))) {
-            throw new InvalidRouteException('The HTTP method has to be a string or an array');
+            throw new InvalidRouteException(
+                'The HTTP method has to be a string or an array');
         }
 
         if ($httpMethod && !is_array($httpMethod)) {
@@ -62,8 +69,13 @@ class Router
                 break;
             }
         }
-                
-        return $this->matchedRoute ? true : false;
+               
+        if (!$this->matchedRoute) {
+            throw new ResourceNotFoundException(sprintf(
+                'No routes found to match [%s]', $path));
+        }          
+
+        return true;
     }    
 
     public function getMatchedRoute()

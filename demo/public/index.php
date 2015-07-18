@@ -6,7 +6,6 @@ class Controller
 {
     protected $request;
     protected $response;
-    protected $dispatcher;
 
     public function setRequest($request)
     {
@@ -23,11 +22,6 @@ class Controller
         return $this->response;
     }
 
-    public function setDispatcher($dispatcher)
-    {
-        $this->dispatcher = $dispatcher;
-    }
-
     public function init()
     {
         
@@ -41,11 +35,6 @@ class Controller
     public function afterAction()
     {
 
-    }
-
-    public function forward($handler = array())
-    {
-        $this->dispatcher->forward($handler, $this->request, $this->response);
     }
 }
 

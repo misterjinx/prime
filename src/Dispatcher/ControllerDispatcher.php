@@ -7,14 +7,19 @@ use Prime\Dispatcher\Exception\HandlerNotFoundException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class CallbackDispatcher implements DispatcherInterface
+class ControllerDispatcher implements DispatcherInterface
 {   
     /**
-     * Callback handler
+     * Determine the handler to use
      * 
-     * @var callable
+     * @var ControllerResolver
      */
-    protected $handler;
+    protected $resolver;
+
+    public function __construct(ControllerResolver $resolver)
+    {
+        $this->resolver = $resolver;
+    }
 
     /**
      * Dispatch the provided request 
@@ -25,20 +30,8 @@ class CallbackDispatcher implements DispatcherInterface
      */
     public function dispatch(ServerRequestInterface $request, ResponseInterface $response)
     {
-        return call_user_func($this->handler, $request, $response);            
-    }
-
-    /**
-     * Register the callback
-     * @param callable $handler
-     */
-    public function setHandler(callable $handler)
-    {
-        $this->handler = $handler;
-    }    
-
-    public function getHandler()
-    {
-        return $this->handler;
+        // get the handler, it can be a callback, a closure or invokable
+        $handler = $this->resolver->getController($request);
+        return call_user_func($handler, $request, $response);
     }
 }

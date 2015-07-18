@@ -5,8 +5,10 @@ namespace Prime;
 use Prime\Container;
 use Prime\Container\ContainerInterface;
 use Prime\Router;
-use Prime\Dispatcher;
-use Prime\CallbackDispatcher;
+use Prime\Router\Route\Exception\ResourceNotFoundException;
+use Prime\Controller\ControllerActionResolver;
+use Prime\Dispatcher\ControllerActionDispatcher;
+use Prime\Dispatcher\Exception\HandlerNotFoundException;
 use Prime\Dispatcher\DispatcherInterface;
 use Prime\EventManager\EventManagerInterface;
 use Zend\Diactoros\ServerRequest;
@@ -38,7 +40,9 @@ class Application
         }
 
         if (!$this->container->has('dispatcher')) {
-            $this->setDispatcher(new Dispatcher());
+            $this->setDispatcher(new ControllerActionDispatcher(
+                new ControllerActionResolver()
+            ));
         }
     }
 
@@ -69,28 +73,33 @@ class Application
 
     public function run()
     {
-        $request  = $this->container->get('request');
-        $response = $this->container->get('response');
-        $router   = $this->container->get('router');
+        $request    = $this->container->get('request');
+        $response   = $this->container->get('response');
+        $router     = $this->container->get('router');
         $dispatcher = $this->container->get('dispatcher');
 
-        $router->match($request);
-
-        $matched = $router->getMatchedRoute();
-        if ($matched) {
-            $dispatcher->setHandler(array(
-                'controller' => $matched->getController(),
-                'action' => $matched->getAction(),
-                'params' => $matched->getMatches()
-            ));
-        }
-
         try {
+            $router->match($request);
+
+            $route = $router->getMatchedRoute();
+            foreach ($route->getMatches() as $param => $value) {
+                $request = $request->withAttribute($param, $value);
+            }
+
             $response = $dispatcher->dispatch($request, $response);
-        } catch (\Exception $exception) {
-            $response = $dispatcher->dispatchError($request, $response, $exception);
+        } catch (ResourceNotFoundException $e) { // no route match
+            $response = $response->withStatus(404);
+        } catch (HandlerNotFoundException $e) { // handler not defined
+            $response = $response->withStatus(404);
+        } catch (\Exception $e) {
+            $response = $response->withStatus(500);
         }
 
+        $this->respond($response);        
+    }
+
+    protected function respond(ResponseInterface $response)
+    {
         $emitter = new SapiEmitter();
         $emitter->emit($response);
     }
