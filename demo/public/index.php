@@ -42,16 +42,13 @@ class IndexController extends Controller
 {
     public function indexAction()
     {
-        $layout = new \Prime\View(__DIR__ . '/../app/views');
+        $layout = new \Prime\View(new \Prime\View\Engine\PhpEngine(new \Prime\View\Resolver\TemplatePathResolver(__DIR__ . '/../app/views')));
 
-        $view = new \Prime\View(__DIR__ . '/../app/views');
-        $content = $view->render('index');
+        $view = new \Prime\View\ViewContent('index');
 
-        $layout->set($view->getCaptureTo(), $content);
+        $layout->addChild($view);
 
-        $full = $layout->render('layout');
-
-        $this->response->getBody()->write($full);
+        $this->response->getBody()->write($layout->render('layout'));
     }
 
     public function forwardAction()

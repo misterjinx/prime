@@ -3,35 +3,14 @@
 namespace Prime;
 
 use Prime\View\ViewInterface;
+use Prime\View\ViewContent;
 use Prime\View\Engine\EngineInterface;
-use Prime\View\Engine\PhpEngine;
 
 /**
  * Default view rendering engine, uses PHP as a template engine.
  */
 class View implements ViewInterface
-{
-    /**
-     * Variable name to assign the rendered template to parent
-     * 
-     * @var string
-     */
-    protected $captureTo = 'content';
-
-    /**
-     * Path where the templates are stored
-     * 
-     * @var string
-     */
-    protected $templatesPath;
-
-    /**
-     * Extension for templates files
-     * 
-     * @var string
-     */
-    protected $fileExtension;
-
+{    
     /**
      * View variables
      * 
@@ -47,6 +26,13 @@ class View implements ViewInterface
     protected $children = array();
 
     /**
+     * Whether existing children were rendered or not
+     * 
+     * @var boolean
+     */
+    protected $renderedChildren = false;
+
+    /**
      * What type of engine to use to render the views
      * 
      * @var EngineInterface
@@ -56,15 +42,13 @@ class View implements ViewInterface
     /**
      * Instantiate the view
      * 
-     * @param string $templatesPath 
+     * @param EngineInterface|null $engine 
      */
-    public function __construct($templatesPath = null, $fileExtension = 'phtml')
+    public function __construct($engine = null)
     {
-        if ($templatesPath) {
-            $this->setTemplatesPath($templatesPath);
+        if ($engine) {
+            $this->setEngine($engine);
         }
-
-        $this->setFileExtension($fileExtension);
     }
 
     public function setEngine(EngineInterface $engine)
@@ -74,16 +58,7 @@ class View implements ViewInterface
 
     public function getEngine()
     {
-        if (!$this->engine) {
-            $this->setEngine($this->getDefaultEngine());
-        }
-
         return $this->engine;
-    }
-
-    public function getDefaultEngine()
-    {
-        return new PhpEngine();
     }
 
     /**
@@ -196,71 +171,14 @@ class View implements ViewInterface
         $this->data = array();
     }
 
-    public function setTemplatesPath($path)
-    {
-        if (!is_string($path) || !file_exists($path)) {
-            throw new \InvalidArgumentException(sprintf(
-                'Invalid templates path provided [%s]. Please make sure the ' .
-                'path is string and exists.', $path));
-        } 
-
-        $this->templatesPath = $path;
-    }
-
-    public function getTemplatesPath()
-    {
-        return $this->templatesPath;
-    }
-
-    public function setFileExtension($fileExtension)
-    {
-        if ($fileExtension && !is_string($fileExtension)) {
-            throw \InvalidArgumentException(sprintf(
-                'Invalid file extension provided [%s]', $fileExtension));
-        }
-
-        $this->fileExtension = $fileExtension;
-    }
-
-    public function getFileExtension()
-    {
-        return $this->fileExtension;
-    }
-
     /**
-     * Set variable name to assign current rendered content to parent view
+     * Add a child content to current view
      * 
-     * @param string $name 
-     */
-    public function setCaptureTo($name)
-    {
-        $this->captureTo = (string) $name;
-    }
-
-    /**
-     * Get name of the variable to capture content to parent view
-     * 
-     * @return string
-     */
-    public function getCaptureTo()
-    {
-        return $this->captureTo;
-    }
-
-    /**
-     * Add a child to current view
-     *
-     * @todo INCOMPLETE, RENDER CHILDREN MISSING
-     * 
-     * @param ViewInterface $child     
+     * @param ViewContent $child     
      * @param string        $captureTo 
      */
-    public function addChild(ViewInterface $child, $captureTo = null)
-    {
-        if ($captureTo) {
-            $child->setCaptureTo($captureTo);
-        }
-
+    public function addChild(ViewContent $child)
+    {     
         $this->children[] = $child;
         return $this;
     }
@@ -275,7 +193,7 @@ class View implements ViewInterface
         return !empty($this->children);
     }
 
-    public function render($template, $data = array())
+    public function render($template, $data = array(), $renderChildren = true)
     {
         $engine = $this->getEngine();
         if (!$engine instanceof EngineInterface) {
@@ -287,52 +205,20 @@ class View implements ViewInterface
             $this->setVars($data);
         }
 
-        return $engine->render($this->resolveTemplate($template), $this->getVars());
+        if ($this->hasChildren() && $renderChildren && !$this->renderedChildren) {
+            $this->renderChildren();
+        }
+
+        return $engine->render($template, $this->getVars());
     }
 
-    protected function resolveTemplate($template)
-    {        
-        if (!$template || !is_string($template)) {
-            throw new \InvalidArgumentException(sprintf(
-                'Invalid template name provided [%s]', $template));            
-        }
-
-        if (preg_match('#\.\.[\\\/]#', $template)) {
-            throw new \DomainException(sprintf(
-                'Template name includes parent directory traversal ' .
-                '("../", "..\\" notation) [%s]', $template));
-        }
-
-        $templatesPath = $this->getTemplatesPath();
-        if (!$templatesPath) {
-            throw new \RuntimeException('Templates path is not defined');            
-        }
-
-        $templatesPath = $this->removeExtraTrailing($templatesPath);
-
-        $path = $templatesPath . DIRECTORY_SEPARATOR 
-              . $template . '.' . $this->getFileExtension();
-
-        if (!file_exists($path)) {
-            throw new \RuntimeException(sprintf(
-                'Template file not found [%s]', $path));
-        }
-
-        return $path;
-    }
-
-    /**
-     * If the path ends with a slash, remove it
-     * 
-     * @param  string $path
-     * @return string
-     */
-    protected function removeExtraTrailing($path)
+    public function renderChildren()
     {
-        if (substr($path, -1) == '/') {
-            $path = substr($path, 0, -1);
+        foreach ($this->children as $child) {
+            $content = $this->render($child->getTemplate(), $child->getVars(), false);
+            $this->set($child->getCaptureTo(), $content);
         }
 
-        return $path;
+        $this->renderedChildren = true;
     }
 }
