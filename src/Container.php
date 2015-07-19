@@ -3,7 +3,7 @@
 namespace Prime;
 
 use Prime\Container\ContainerInterface;
-use Prime\Container\Exception\ServiceNotFound;
+use Prime\Container\Exception\ServiceNotFoundException;
 
 /** 
  * Container that can be used as a Service Locator or a Dependency Injection 
@@ -46,7 +46,7 @@ class Container implements ContainerInterface
     public function get($name, $params = array())
     {
         if (!$this->has($name)) {
-            throw new ServiceNotFound($name);
+            throw new ServiceNotFoundException($name);
         }
 
         $service = $this->services[$name];

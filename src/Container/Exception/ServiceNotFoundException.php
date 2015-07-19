@@ -2,9 +2,10 @@
 
 namespace Prime\Container\Exception;
 
-use Interop\Container\Exception\NotFoundException
+use Interop\Container\Exception\NotFoundException;
 
-class ServiceNotFoundException extends NotFoundException
+class ServiceNotFoundException 
+    extends \InvalidArgumentException implements NotFoundException
 {
 
 }

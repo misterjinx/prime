@@ -42,13 +42,9 @@ class IndexController extends Controller
 {
     public function indexAction()
     {
-        $layout = new \Prime\View(new \Prime\View\Engine\PhpEngine(new \Prime\View\Resolver\TemplatePathResolver(__DIR__ . '/../app/views')));
-
-        $view = new \Prime\View\ViewContent('index');
-
-        $layout->addChild($view);
-
-        $this->response->getBody()->write($layout->render('layout'));
+        return new \Prime\View\ViewContent('index', array(
+            'hello' => 'world'
+        ));
     }
 
     public function forwardAction()
@@ -65,6 +61,12 @@ class ErrorController extends Controller
     }
 }
 
+$container = new \Prime\Container();
+$container->set('view', new \Prime\View(
+    new \Prime\View\Engine\PhpEngine(
+        new \Prime\View\Resolver\TemplatePathResolver(__DIR__ . '/../app/views')
+    )
+));
 
-$app = new \Prime\Application(new \Prime\Container());
+$app = new \Prime\Application($container);
 $app->run();

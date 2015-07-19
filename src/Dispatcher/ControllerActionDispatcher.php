@@ -40,16 +40,15 @@ class ControllerActionDispatcher implements DispatcherInterface
                 $object->beforeAction();
 
                 // run action                            
-                $object->$actionMethodName();
+                $response = $object->$actionMethodName();
 
                 // run post action logic
                 $object->afterAction();
 
                 // done
                 // $this->setDispatched();
-
-                // return the response
-                return $object->getResponse();
+                 
+                return $response;
             } else {
                 throw new HandlerNotFoundException(sprintf(
                     '%s class has no method %s defined', 

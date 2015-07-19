@@ -4,13 +4,14 @@ namespace Prime;
 
 use Prime\Container;
 use Prime\Container\ContainerInterface;
+use Prime\Container\Exception\ServiceNotFoundException;
 use Prime\Router;
 use Prime\Router\Route\Exception\ResourceNotFoundException;
 use Prime\Controller\ControllerActionResolver;
 use Prime\Dispatcher\ControllerActionDispatcher;
 use Prime\Dispatcher\Exception\HandlerNotFoundException;
 use Prime\Dispatcher\DispatcherInterface;
-use Prime\EventManager\EventManagerInterface;
+use Prime\View\ViewContentInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\ServerRequestFactory;
 use Zend\Diactoros\Response;
@@ -86,7 +87,41 @@ class Application
                 $request = $request->withAttribute($param, $value);
             }
 
-            $response = $dispatcher->dispatch($request, $response);
+            $received = $dispatcher->dispatch($request, $response);
+
+            if (!$received instanceof ResponseInterface) {
+                // perhaps view content
+                if ($received instanceof ViewContentInterface) {
+                    try {
+                        $view = $this->container->get('view');
+                        $view->addChild($received);
+                        
+                        $response->getBody()->write(
+                            $view->render('layout')
+                        );
+
+                        // update the received with the proper response                            
+                        $received = clone $response;
+                    } catch (ServiceNotFoundException $e) {
+                        throw new \LogicException(sprintf(
+                            'You returned a %s object, but there is no view ' .
+                            'defined.', get_class($received)));
+                    }
+                }
+
+                if (!$received instanceof ResponseInterface) {
+                    $message = 'Controllers must return a ResponseInterface ' 
+                             . 'object, %s given.';
+                    if ($received === null) {
+                        $message .= 'Please add a return statement in your ' 
+                                 . 'controller.';
+                    }
+
+                    throw new \LogicException(sprintf($message, gettype($received))); 
+                }
+            }
+
+            $response = $received;
         } catch (ResourceNotFoundException $e) { // no route match
             $response = $response->withStatus(404);
         } catch (HandlerNotFoundException $e) { // handler not defined
