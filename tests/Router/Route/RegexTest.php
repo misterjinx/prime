@@ -2,11 +2,13 @@
 
 namespace Prime\Tests\Router\Route;
 
+use Prime\Router\Route\Regex;
+
 class RegexTest extends \PHPUnit_Framework_TestCase
 {
     public function testMatch()
     {
-        $route = new \Prime\Router\Route\Regex('/article/(?<id>[0-9]+)', 'format', array(
+        $route = new Regex('/article/(?<id>[0-9]+)', 'format', array(
             'controller' => 'articles',
             'action' => 'view'
         ));
@@ -19,7 +21,7 @@ class RegexTest extends \PHPUnit_Framework_TestCase
 
     public function testMatchGetParam()
     {
-        $route = new \Prime\Router\Route\Regex('/article/(?<id>[0-9]+)', 'format', array(
+        $route = new Regex('/article/(?<id>[0-9]+)', 'format', array(
             'controller' => 'articles',
             'action' => 'view'
         ));
@@ -33,7 +35,7 @@ class RegexTest extends \PHPUnit_Framework_TestCase
 
     public function testAssemble()
     {
-        $route = new \Prime\Router\Route\Regex('/article/(?<foo>[a-zA-Z0-9]+)', '/article/{foo}');
+        $route = new Regex('/article/(?<foo>[a-zA-Z0-9]+)', '/article/{foo}');
 
         $this->assertSame('/article/bar', $route->assemble(array('foo' => 'bar')));
         $this->assertSame('/article/{foo}', $route->assemble());

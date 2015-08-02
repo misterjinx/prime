@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b0327ce9bd3a8a7ece58af3413b4752b",
+    "hash": "9978792d7ed79c82e01887f0e28455a2",
     "packages": [
         {
             "name": "container-interop/container-interop",
@@ -84,16 +84,16 @@
         },
         {
             "name": "zendframework/zend-diactoros",
-            "version": "1.1.1",
+            "version": "1.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/zendframework/zend-diactoros.git",
-                "reference": "eeedadd333b80bb5d93559e2285047463fe4fe33"
+                "reference": "bac9f86a4dbf282a3029602411ae655225bc370b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/zendframework/zend-diactoros/zipball/eeedadd333b80bb5d93559e2285047463fe4fe33",
-                "reference": "eeedadd333b80bb5d93559e2285047463fe4fe33",
+                "url": "https://api.github.com/repos/zendframework/zend-diactoros/zipball/bac9f86a4dbf282a3029602411ae655225bc370b",
+                "reference": "bac9f86a4dbf282a3029602411ae655225bc370b",
                 "shasum": ""
             },
             "require": {
@@ -130,7 +130,7 @@
                 "psr",
                 "psr-7"
             ],
-            "time": "2015-06-25 18:07:28"
+            "time": "2015-07-12 17:59:47"
         }
     ],
     "packages-dev": [],

@@ -2,11 +2,13 @@
 
 namespace Prime\Tests\Router\Route;
 
+use Prime\Router\Route\Literal;
+
 class LiteralTest extends \PHPUnit_Framework_TestCase
 {
     public function testMatch()
     {
-        $route = new \Prime\Router\Route\Literal('/test', array(
+        $route = new Literal('/test', array(
             'controller' => 'test',
             'action' => 'test'
         ));
@@ -17,7 +19,7 @@ class LiteralTest extends \PHPUnit_Framework_TestCase
 
     public function testAssemble()
     {
-        $route = new \Prime\Router\Route\Literal('/foo');
+        $route = new Literal('/foo');
 
         $this->assertSame('/foo', $route->assemble());
         $this->assertSame('/foo', $route->assemble(array('foo' => 'bar')));

@@ -2,12 +2,14 @@
 
 namespace Prime\Tests\Router\Route;
 
+use Prime\Router\Route\Simple;
+
 class SimpleTest extends \PHPUnit_Framework_TestCase
 {
     public function testMatchNormal()
     {
         // normal route, no filters            
-        $route = new \Prime\Router\Route\Simple('/test/{named}', array(
+        $route = new Simple('/test/{named}', array(
             'controller' => 'test',
             'action' => 'named'
         ));
@@ -18,7 +20,7 @@ class SimpleTest extends \PHPUnit_Framework_TestCase
     public function testMatchWithFiltersPassedIndividually()
     {
         // add filters individually
-        $route = new \Prime\Router\Route\Simple('/test/{id}', array(
+        $route = new Simple('/test/{id}', array(
             'controller' => 'test',
             'action' => 'named'
         ));
@@ -33,7 +35,7 @@ class SimpleTest extends \PHPUnit_Framework_TestCase
     public function testMatchWithFiltersPassedInConstructor()
     {
         // add filters in constructor
-        $route = new \Prime\Router\Route\Simple('/test/{x}', array(
+        $route = new Simple('/test/{x}', array(
             'controller' => 'test',
             'action' => 'x'
         ), array(
@@ -48,7 +50,7 @@ class SimpleTest extends \PHPUnit_Framework_TestCase
 
     public function testMatchGetParam()
     {
-        $route = new \Prime\Router\Route\Simple('/{foo}/{bar}/page/{page}', array(
+        $route = new Simple('/{foo}/{bar}/page/{page}', array(
             'controller' => 'fooos',
             'action' => 'baaar'
         ));
@@ -68,7 +70,7 @@ class SimpleTest extends \PHPUnit_Framework_TestCase
 
     public function testAssemble()
     {
-        $route = new \Prime\Router\Route\Simple('/{foo}/{bar}/baz');
+        $route = new Simple('/{foo}/{bar}/baz');
 
         $this->assertSame('/foo/bar/baz', $route->assemble(array(
             'foo' => 'foo',

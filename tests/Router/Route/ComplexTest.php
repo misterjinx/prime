@@ -2,11 +2,13 @@
 
 namespace Prime\Tests\Router\Route;
 
+use Prime\Router\Route\Complex;
+
 class ComplexTest extends \PHPUnit_Framework_TestCase
 {
     public function testMatch()
     {
-        $route = new \Prime\Router\Route\Complex(
+        $route = new Complex(
             '/docs/{section}/{title}.{format}', 
         array(
             'controller' => 'docs',
@@ -26,7 +28,7 @@ class ComplexTest extends \PHPUnit_Framework_TestCase
 
     public function testMatchGetParam()
     {
-        $route = new \Prime\Router\Route\Complex(
+        $route = new Complex(
             '/article/{slug}-{id}', 
         array(
             'controller' => 'articles',
@@ -51,7 +53,7 @@ class ComplexTest extends \PHPUnit_Framework_TestCase
 
     public function testAssemble()
     {
-        $route = new \Prime\Router\Route\Complex('/article/{slug}-{id}');
+        $route = new Complex('/article/{slug}-{id}');
 
         $this->assertSame('/article/title-123', $route->assemble(array(
             'slug' => 'title',

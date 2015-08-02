@@ -114,7 +114,7 @@ class Router
         $this->matchedRoute = false;
     }
 
-    public function clean()
+    public function cleanUp()
     {
         $this->clearRoutes();
         $this->clearMatchedRoute();

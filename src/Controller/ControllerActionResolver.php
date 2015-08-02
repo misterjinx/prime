@@ -20,6 +20,49 @@ class ControllerActionResolver implements ResolverInterface
     protected $methodNameSuffix = 'Action';
 
     /**
+     * Default action name to be used if enabled
+     * @var string
+     */
+    protected $defaultAction = 'index';
+
+    /**
+     * Whether to use the default action name when no action is found
+     * @var boolean
+     */
+    protected $useDefaultAction = true;
+
+    /**
+     * Namespace to use for Controller class names
+     * @var string
+     */
+    protected $namespace;
+
+    /**
+     * Initialize options
+     * 
+     * @param boolean $useDefaultAction
+     */
+    public function __construct($useDefaultAction = true, $namespace = null)
+    {
+        $this->useDefaultAction = (bool) $useDefaultAction;
+        
+        if ($namespace !== null) {
+            $this->setNamespace($namespace);
+        }
+    }    
+
+    public function setNamespace($namespace)
+    {
+        if (!is_string($namespace)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Namespace has to be string, %s given', 
+                gettype($namespace)));
+        }
+
+        $this->namespace = (string) $namespace;
+    }
+
+    /**
      * Get controller class name
      * 
      * @param  ServerRequestInterface $request
@@ -53,7 +96,11 @@ class ControllerActionResolver implements ResolverInterface
     {
         $action = $request->getAttribute('action');
         if (!$action) {
-            return false;
+            if (!$this->useDefaultAction) {
+                return false;
+            } 
+
+            $action = $this->defaultAction;
         }
 
         if (!is_string($action)) {
@@ -67,7 +114,9 @@ class ControllerActionResolver implements ResolverInterface
 
     protected function formatControllerClassName($name)
     {
-        return $this->camelize($name) . $this->controllerNameSuffix;
+        $namespace = $this->namespace ? $this->namespace . '\\' : '';
+
+        return $namespace . $this->camelize($name) . $this->controllerNameSuffix;
     }
 
     protected function formatActionMethodName($name)

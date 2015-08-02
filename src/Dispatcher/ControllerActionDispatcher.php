@@ -2,12 +2,13 @@
 
 namespace Prime\Dispatcher;
 
+use Prime\Container\ContainerAware;
 use Prime\Controller\ControllerActionResolver;
 use Prime\Dispatcher\Exception\HandlerNotFoundException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class ControllerActionDispatcher implements DispatcherInterface
+class ControllerActionDispatcher extends ContainerAware implements DispatcherInterface
 {   
     /**
      * Determine the actual controller class and action method to use
@@ -30,23 +31,27 @@ class ControllerActionDispatcher implements DispatcherInterface
             if (method_exists($controllerClassName, $actionMethodName)) {
                 $object = new $controllerClassName();
 
-                $object->setRequest($request);
-                $object->setResponse($response);
+                if ($object instanceof ContainerAware) {
+                    $object->setContainer($this->container);
+                }
                 
-                // perform initialisation if needed
-                $object->init();
+                // perform initialisation if exists
+                if (method_exists($object, 'init')) {
+                    $object->init();
+                }                
 
-                // run pre action logic
-                $object->beforeAction();
+                // run pre action logic if exists
+                if (method_exists($object, 'beforeAction')) {
+                    $object->beforeAction();
+                }
 
                 // run action                            
                 $response = $object->$actionMethodName();
 
-                // run post action logic
-                $object->afterAction();
-
-                // done
-                // $this->setDispatched();
+                // run post action logic if exists
+                if (method_exists($object, 'afterAction')) {
+                    $object->afterAction();
+                }
                  
                 return $response;
             } else {

@@ -2,37 +2,46 @@
 
 namespace Prime\Tests;
 
+use Prime\Router;
+use Prime\Router\Route\Literal;
+use Prime\Router\Route\Simple;
+use Prime\Router\Route\Complex;
+use Prime\Router\Route\Exception\ResourceNotFoundException;
+use Prime\Router\Route\Exception\InvalidRouteException;
+use Zend\Diactoros\ServerRequest;
+
 class RouterTest extends \PHPUnit_Framework_TestCase
 {
-    protected $_instance;
-
+    protected $instance;
 
     public function setUp()
     {
-        $this->_instance = new \Prime\Router(true);
+        $this->instance = new Router();
     }
 
     public function tearDown()
     {
-        $this->_instance->clean();
+        $this->instance->cleanUp();
     }
 
     public function testInstantiation()
     {
-        $this->assertInstanceOf('Prime\Router', $this->_instance);
+        $this->assertInstanceOf('Prime\Router', $this->instance);
     }
 
     public function testDefaultRoutesDefinedOnInstantiation()
     {
-        $this->assertSame(2, $this->_instance->routesCount());
+        $router = new Router(true);
 
-        $this->assertTrue($this->_instance->hasRoute('default.controller'));
-        $this->assertTrue($this->_instance->hasRoute('default.controller.action'));
+        $this->assertSame(2, $router->routesCount());
+
+        $this->assertTrue($router->hasRoute('default.controller'));
+        $this->assertTrue($router->hasRoute('default.controller.action'));
     }
 
     public function testDefaultRoutesNotDefinedOnInstantiation()
     {
-        $router = new \Prime\Router(false);
+        $router = new Router(false);
 
         $this->assertSame(0, $router->routesCount());
 
@@ -42,122 +51,192 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testAddRoute()
     {
-        $this->_instance->add('foo', new \Prime\Router\Route\Literal('/foo'));
+        $this->instance->add('foo', new Literal('/foo'));
 
-        $this->assertTrue($this->_instance->hasRoute('foo'));
+        $this->assertTrue($this->instance->hasRoute('foo'));
     }
 
-    public function testAddedRouteMatchesRequestedRoute()
+    public function testAddedRouteIsTheSameWhenGetRoute()
     {
-        $route = new \Prime\Router\Route\Literal('/foo/bar');
+        $route = new Literal('/foo/bar');
 
-        $this->_instance->add('foo.bar', $route);
+        $this->instance->add('foo.bar', $route);
 
-        $this->assertSame($route, $this->_instance->getRoute('foo.bar'));
+        $this->assertSame($route, $this->instance->getRoute('foo.bar'));
     }
 
     public function testAddedRouteOverwritesPreviouslyAddedRouteWithTheSameName()
     {
-        $routeA = new \Prime\Router\Route\Literal('/foo/bar');
-        $routeB = new \Prime\Router\Route\Literal('/baz/qux');
+        $routeA = new Literal('/foo/bar');
+        $routeB = new Literal('/baz/qux');
 
-        $this->_instance->add('foo.bar', $routeA);
-        $this->_instance->add('foo.bar', $routeB);
+        $this->instance->add('foo.bar', $routeA);
+        $this->instance->add('foo.bar', $routeB);
 
-        $this->assertSame($routeB, $this->_instance->getRoute('foo.bar'));
+        $this->assertSame($routeB, $this->instance->getRoute('foo.bar'));
     }
 
     public function testHasRoute()
     {
-        $route = new \Prime\Router\Route\Literal('/foo/bar/baz/qux');
+        $route = new Literal('/foo/bar/baz/qux');
 
-        $this->_instance->add('foo.bar.baz.qux', $route);
+        $this->instance->add('foo.bar.baz.qux', $route);
 
-        $this->assertTrue($this->_instance->hasRoute('foo.bar.baz.qux'));
+        $this->assertTrue($this->instance->hasRoute('foo.bar.baz.qux'));
     }
 
     public function testGetRoute()
     {
         $route = new \Prime\Router\Route\Literal('/baz/qux');
 
-        $this->_instance->add('baz.qux', $route);
+        $this->instance->add('baz.qux', $route);
 
-        $this->assertSame($route, $this->_instance->getRoute('baz.qux'));
+        $this->assertSame($route, $this->instance->getRoute('baz.qux'));
     }
 
     public function testRoutesCount()
     {
-        $route = new \Prime\Router\Route\Literal('/baz/qux');
+        $route = new Literal('/baz/qux');
 
-        $this->_instance->add('baz.qux', $route);
+        $this->instance->add('baz.qux', $route);
 
-        $this->assertSame(3, $this->_instance->routesCount());
+        $this->assertSame(1, $this->instance->routesCount());
 
-        $router = new \Prime\Router(false);
+        // define default routes 
+        $router = new Router(true);
         $router->add('baz.qux', $route);
 
-        $this->assertSame(1, $router->routesCount());            
+        // two defaults routes plus one previously added
+        $this->assertSame(3, $router->routesCount());            
     }
 
     public function testClearRoutes()
     {
-        $this->_instance->clearRoutes();
+        $this->instance->clearRoutes();
 
-        $this->assertEmpty($this->_instance->getRoutes());
+        $this->assertEmpty($this->instance->getRoutes());
     }
 
     public function testClearMatchedRoute()
     {
-        $route = new \Prime\Router\Route\Literal('/foo/bar');
-        $request = new \Prime\Http\Request([], [], '/foo/bar');
+        $route = new Literal('/foo/bar');
+        $this->instance->add('foo.bar', $route);
 
-        $this->assertTrue($this->_instance->match($request));
+        $request = new ServerRequest([], [], '/foo/bar');        
+        $this->assertTrue($this->instance->match($request));
 
-        $this->_instance->clearMatchedRoute();
+        $this->instance->clearMatchedRoute();
 
-        $this->assertFalse($this->_instance->getMatchedRoute());
-
+        $this->assertFalse($this->instance->getMatchedRoute());
     }
 
-    public function testMatch()
+    public function testCleanUp()
     {
-        $routeA = new \Prime\Router\Route\Literal('/foo');
-        $routeB = new \Prime\Router\Route\Literal('/foo/bar');
-        $routeC = new \Prime\Router\Route\Simple('/foo/{bar}/baz');
-        $routeD = new \Prime\Router\Route\Complex('/foo/{chapter}/{section}.{format}');
+        $route = new Literal('/foo');
 
-        // make sure there are no default routes defined for this tests
-        $this->_instance->clean();
+        $this->instance->add('foo', $route);
 
-        $this->_instance->add('foo', $routeA);
-        $this->_instance->add('foo.bar', $routeB);
-        $this->_instance->add('foo.bar.baz', $routeC);
-        $this->_instance->add('foo.chapter.section', $routeD);
+        $request = new ServerRequest([], [], '/foo');        
+        $this->assertTrue($this->instance->match($request));
+        $this->assertSame($route, $this->instance->getMatchedRoute());
 
-        $request = new \Prime\Http\Request([], [], '/foo/bar');
+        $this->instance->cleanUp();
 
-        $this->assertTrue($this->_instance->match($request));
-        $this->assertSame($routeB, $this->_instance->getMatchedRoute());
+        $this->assertEmpty($this->instance->getRoutes());   
+        $this->assertFalse($this->instance->getMatchedRoute());
+    }
 
-        $this->_instance->clean();
+    public function testMatchLiteral()
+    {
+        $routeA = new Literal('/foo');
+        $routeB = new Literal('/foo/bar');        
 
-        $this->_instance->add('foo.chapter.section', $routeD);
+        $this->instance->add('foo', $routeA);
+        $this->instance->add('foo.bar', $routeB);
 
-        $this->assertFalse($this->_instance->match($request));
-        $this->assertFalse($this->_instance->getMatchedRoute());
+        $requestA = new ServerRequest([], [], '/foo');    
 
-        $request = new \Prime\Http\Request([], [], '/foo/bar/some-section.html');
+        $this->assertTrue($this->instance->match($requestA));
+        $this->assertSame($routeA, $this->instance->getMatchedRoute());
 
-        $this->assertTrue($this->_instance->match($request));        
-        $this->assertSame($routeD, $this->_instance->getMatchedRoute());
+        $requestB = new ServerRequest([], [], '/foo/bar');
 
-        $this->_instance->clean();
+        $this->assertTrue($this->instance->match($requestB));
+        $this->assertSame($routeB, $this->instance->getMatchedRoute());
+    } 
 
-        $this->_instance->add('foo.bar.baz', $routeC);
+    public function testMatchSimple()
+    {
+        $route = new Simple('/foo/{bar}/baz');        
+        $this->instance->add('foo.bar.baz', $route);
 
-        $request = new \Prime\Http\Request([], [], '/foo/nothing/baz');
+        $request = new ServerRequest([], [], '/foo/nothing/baz');
 
-        $this->assertTrue($this->_instance->match($request));        
-        $this->assertSame($routeC, $this->_instance->getMatchedRoute());        
+        $this->assertTrue($this->instance->match($request));        
+        $this->assertSame($route, $this->instance->getMatchedRoute());  
+    }   
+
+    public function testMatchComplex()
+    {
+        $route = new Complex('/foo/{chapter}/{section}.{format}');
+        $this->instance->add('foo.chapter.section', $route);
+
+        $request = new ServerRequest([], [], '/foo/bar/some-section.html');
+
+        $this->assertTrue($this->instance->match($request));        
+        $this->assertSame($route, $this->instance->getMatchedRoute());
+    }
+
+    public function testMatchRouteWithSpecificHttpMethod()
+    {
+        $route = new Literal('/foo');
+        $this->instance->add('foo', $route, 'POST');
+
+        $request = new ServerRequest([], [], '/foo', 'POST');
+
+        $this->assertTrue($this->instance->match($request));
+        $this->assertSame($route, $this->instance->getMatchedRoute());
+    }
+
+    /**
+     * @expectedException   Prime\Router\Route\Exception\ResourceNotFoundException
+     */
+    public function testNoMatchThrowsException()
+    {
+        $this->instance->add('foo', new Literal('/foo'));        
+        $this->instance->add('foo', new Literal('/bar'));        
+
+        $request = new ServerRequest([], [], '/baz');
+
+        $this->instance->match($request);
+    }
+
+    /**
+     * @expectedException   Prime\Router\Route\Exception\ResourceNotFoundException
+     */
+    public function testNoMatchRouteWithDifferentHttpMethodThrowsException()
+    {
+        $route = new Literal('/bar');
+        $this->instance->add('bar', $route, 'GET');
+
+        $request = new ServerRequest([], [], '/bar', 'POST');
+
+        $this->instance->match($request);
+    }
+
+    /**
+     * @expectedException   Prime\Router\Route\Exception\InvalidRouteException
+     */
+    public function testAddRouteWrongNameTypeThrowsException()
+    {
+        $this->instance->add(111, new Literal('/foo'));
+    }
+
+    /**
+     * @expectedException   Prime\Router\Route\Exception\InvalidRouteException
+     */
+    public function testAddRouteWrongHttpMethodTypeThrowsException()
+    {
+        $this->instance->add('foo', new Literal('/foo'), 111);
     }
 }

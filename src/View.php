@@ -40,6 +40,13 @@ class View implements ViewInterface
     protected $engine;
 
     /**
+     * Default layout template to render if needed
+     * 
+     * @var string
+     */
+    protected $layout = 'layout/layout';    
+
+    /**
      * Instantiate the view
      * 
      * @param EngineInterface|null $engine 
@@ -220,5 +227,27 @@ class View implements ViewInterface
         }
 
         $this->renderedChildren = true;
+    }
+
+    public function useLayout()
+    {
+        return (bool) $this->layout;
+    }
+
+    public function disableLayout()
+    {
+        $this->setLayoutTemplate(false);
+    }
+
+    public function setLayoutTemplate($template = null)
+    {
+        if ($template !== null) {
+            $this->layout = $template;
+        }
+    }
+
+    public function getLayoutTemplate()
+    {
+        return $this->layout;
     }
 }
