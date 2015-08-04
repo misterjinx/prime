@@ -125,9 +125,9 @@ class Application
             $this->setRequest($request);
         }
 
-        $request    = $this->container->get('request');
-        $router     = $this->container->get('router');
-        $events     = $this->container->get('events');
+        $request = $this->container->get('request');
+        $router  = $this->container->get('router');
+        $events  = $this->container->get('events');
 
         $router->match($request);
 
