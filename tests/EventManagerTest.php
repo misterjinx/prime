@@ -41,20 +41,39 @@ class EventManagerTest extends \PHPUnit_Framework_TestCase
     public function testAttachListener()
     {
         $listener = $this->getMock('Prime\EventManager\EventListenerInterface', array(
-            'onFoo', 'getAttachedEvents'
+            'onFoo', 'onBar', 'onBaz', 'getAttachedEvents'
         ));        
         $listener->expects($this->once())
                  ->method('getAttachedEvents')
                  ->will($this->returnValue(array(
-                    'foo' => 'onFoo'
+                    'foo' => 'onFoo', // as string
+                    'bar' => array('onBar'), // as array 
+                    'baz' => array('onBaz', 2) // as array with priority
                  )));
         $listener->expects($this->any())
                  ->method('onFoo')
-                 ->will($this->returnValue('bar'));                 
+                 ->will($this->returnValue('on foo'));
+        $listener->expects($this->any())
+                 ->method('onBar')
+                 ->will($this->returnValue('on bar'));
+        $listener->expects($this->any())
+                 ->method('onBaz')
+                 ->will($this->returnValue('on baz'));
 
         $this->events->attachListener($listener);
 
-        $this->assertTrue(in_array('foo', $this->events->getEvents()));                 
+        $events = $this->events->getEvents();
+
+        foreach (array('foo', 'bar', 'baz') as $event) {
+            $this->assertTrue(in_array($event, $events));    
+            $listeners = $this->events->getEventListeners($event);
+            $this->assertSame(1, count($listeners));
+
+            foreach ($listeners as $listen) {
+                $this->assertSame(get_class($listener), get_class($listen[0]));
+                $this->assertSame('on'.ucwords($event), $listen[1]);
+            }
+        }
     }
 
     public function testGetEvents()

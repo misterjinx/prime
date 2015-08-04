@@ -111,4 +111,20 @@ class EventManager implements EventManagerInterface
     {
         return array_keys($this->events);
     }
+
+    public function getEventListeners($event)
+    {
+        if (isset($this->events[$event])) {
+            return $this->events[$event];
+        }
+
+        return new PriorityQueue();
+    }
+
+    public function clearEventListeners($event)
+    {
+        if (isset($this->events[$event])) {
+            unset($this->events[$event]);
+        }
+    }
 }
