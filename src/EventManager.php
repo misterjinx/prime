@@ -83,6 +83,8 @@ class EventManager implements EventManagerInterface
             throw new \InvalidArgumentException('Invalid callback provided');
         }
 
+        $responses = array();
+
         if (isset($this->events[$event])) {
             if ($params instanceof EventInterface) {
                 $ev = $params;
@@ -92,16 +94,16 @@ class EventManager implements EventManagerInterface
                 $ev = new Event($event, $params);
             }
 
-            foreach ($this->events[$event] as $eventCallback) {                
-                $response = call_user_func($eventCallback, $ev);
-                if ($callback && call_user_func($callback, $response)) {
+            foreach ($this->events[$event] as $k => $eventCallback) {
+                $responses[$k] = call_user_func($eventCallback, $ev);
+                if ($callback && call_user_func($callback, $responses[$k])) {
                     break; // perhaps should add this as a method parameter 
                            // to decide if should break after the first true 
                            // response or not
                 }
             }
 
-            return $response;
+            return count($responses) > 1 ? $responses : reset($responses);
         }
 
         return null;

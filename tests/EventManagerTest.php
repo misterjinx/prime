@@ -3,6 +3,8 @@
 namespace Prime\Tests\EventManager;
 
 use Prime\EventManager;
+use Prime\EventManager\Event;
+use Prime\EventManager\EventInterface;
 
 class EventManagerTest extends \PHPUnit_Framework_TestCase
 {
@@ -76,6 +78,99 @@ class EventManagerTest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    public function testTriggerGetsEventListenersTriggered()
+    {
+        $this->events->attach('foo', function() { return 'on foo'; });
+
+        $this->assertSame('on foo', $this->events->trigger('foo'));
+    }
+
+    public function testTriggerUsesDefaultEventClass()
+    {
+        $this->events->attach('foo', function($ev) { 
+            return $ev instanceof Event; 
+        });
+
+        $this->assertTrue($this->events->trigger('foo'));
+    }
+
+    public function testTriggerUsesCustomEventClassWhenProvided()
+    {
+        $event = $this->getMock('Prime\EventManager\EventInterface');
+
+        $this->events->attach('foo', function($ev) { 
+            return $ev; 
+        });
+
+        $this->assertInstanceOf(get_class($event), $this->events->trigger('foo', $event));
+    }
+
+    public function testTriggerForOneEventListenerReturnsOneResponse()
+    {
+        $this->events->attach('foo', function() { return 'on foo'; });
+
+        $this->assertTrue(is_string($this->events->trigger('foo')));
+    }
+
+    public function testTriggerForManyEventListenerReturnsArrayOfResponses()
+    {
+        $this->events->attach('foo', function() { return 'on foo 1'; });
+        $this->events->attach('foo', function() { return 'on foo 2'; });
+
+        $responses = $this->events->trigger('foo');
+        $this->assertTrue(is_array($responses));
+        $this->assertSame(2, count($responses));
+    }
+
+    public function testTriggerGetsAllEventListenersTriggered()
+    {
+        $this->events->attach('foo', function() { return 'on foo 1'; });
+        $this->events->attach('foo', function() { return 'on foo 2'; });
+
+        $responses = $this->events->trigger('foo');
+        $this->assertSame(2, count($responses));
+        $this->assertSame('on foo 1on foo 2', implode('', $responses));
+    }
+
+    public function testTriggerWithCallbackForMultipleListenersBreaksOnTrue()
+    {
+        $this->events->attach('foo', function() { return 'on foo 1'; });
+        $this->events->attach('foo', function() { return 'on foo 2'; });
+
+        $response = $this->events->trigger('foo', array(), function($resp) { 
+            return true; 
+        });
+
+        $this->assertSame('on foo 1', $response);
+    }
+
+    public function testTriggerWithCallbackForMultipleListenersDoNotBreakIfFalseReturn()
+    {
+        $this->events->attach('foo', function() { return 'on foo 1'; });
+        $this->events->attach('foo', function() { return 'on foo 2'; });
+
+        $response = $this->events->trigger('foo', array(), function($resp) { 
+            return false; 
+        });
+
+        $responses = $this->events->trigger('foo');
+        $this->assertSame(2, count($responses));
+        $this->assertSame('on foo 1on foo 2', implode('', $responses));
+    }
+
+    public function testTriggerWithParamsListenerReturnsParams()
+    {
+        $this->events->attach('foo', function($ev) { return $ev->getParams(); });
+        $params = array('bar' => 'baz');
+
+        $this->assertSame($params, $this->events->trigger('foo', $params));
+    }
+
+    public function testTriggerNonExistentEventReturnsNull()
+    {
+        $this->assertSame(null, $this->events->trigger('foo'));
+    }
+
     public function testGetEvents()
     {
         $this->events->attach('foo', function() {});
@@ -83,4 +178,34 @@ class EventManagerTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame(array('foo', 'bar'), $this->events->getEvents());
     }
+
+    public function testGetEventListeners()
+    {
+        $this->events->attach('foo', function() {});
+
+        $this->assertSame(1, count($this->events->getEventListeners('foo')));
+    }
+
+    public function testGetEventListenersForNonExistentEvent()
+    {
+        $this->assertSame(0, count($this->events->getEventListeners('bar')));
+    }
+
+    public function testClearEventListenersWithAttachedEvent()
+    {
+        $this->events->attach('foo', function() {});
+        $this->assertSame(1, count($this->events->getEventListeners('foo')));
+
+        $this->events->clearEventListeners('foo');
+        $this->assertSame(0, count($this->events->getEventListeners('foo')));
+    }
+
+    public function testClearEventListenersWithNotAttachedEvent()
+    {
+        $this->events->attach('foo', function() {});
+        $this->assertSame(1, count($this->events->getEventListeners('foo')));
+
+        $this->events->clearEventListeners('bar');
+        $this->assertSame(0, count($this->events->getEventListeners('bar')));
+    }    
 }
