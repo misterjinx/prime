@@ -171,6 +171,14 @@ class EventManagerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(null, $this->events->trigger('foo'));
     }
 
+    public function testAttachedListenersWithDifferentPrioritiesTriggersInOrder()
+    {
+        $this->events->attach('foo', function() { return 'first'; }, 1);
+        $this->events->attach('foo', function() { return 'second'; }, 2);
+
+        $this->assertSame('secondfirst', implode('', $this->events->trigger('foo')));
+    }
+
     public function testGetEvents()
     {
         $this->events->attach('foo', function() {});
