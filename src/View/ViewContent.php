@@ -64,16 +64,17 @@ class ViewContent implements ViewContentInterface
      * Get a variable if is set
      * 
      * @param  string $name
+     * @param  mixed $default
      * @return mixed
      */
-    public function get($name)
+    public function get($name, $default = null)
     {
         $key = (string) $name;
         if (array_key_exists($key, $this->data)) {
             return $this->data[$key];
         }
 
-        return null;
+        return $default;
     }
 
     /**

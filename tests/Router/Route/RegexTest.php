@@ -6,6 +6,21 @@ use Prime\Router\Route\Regex;
 
 class RegexTest extends \PHPUnit_Framework_TestCase
 {
+
+    public function testInstantiation()
+    {
+        $route = new Regex('/ba[rz]', 'format');
+        $this->assertInstanceOf('Prime\Router\Route\Regex', $route);
+    }
+
+    /**
+     * @expectedException   Prime\Router\Route\Exception\InvalidRouteException
+     */
+    public function testConstructorWithFormatNotStringThrowsException()
+    {
+        $route = new Regex('/foo', 123);
+    }
+
     public function testMatch()
     {
         $route = new Regex('/article/(?<id>[0-9]+)', 'format', array(

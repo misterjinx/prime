@@ -13,15 +13,25 @@ class Simple extends Route
         parent::__construct($path, $defaults);
 
         if ($filters) {
-            foreach ($filters as $placeholder => $pattern) {
-                $this->filter($placeholder, $pattern);
-            }
+            $this->setFilters($filters);    
         }
     }
 
     public function filter($placeholder, $pattern)
     {
         $this->filters[$placeholder] = $pattern;
+    }
+
+    public function setFilters($filters = array())
+    {
+        foreach ($filters as $placeholder => $pattern) {
+            $this->filter($placeholder, $pattern);
+        }
+    }
+
+    public function getFilters()
+    {
+        return $this->filters;
     }
 
     public function clearFilters()

@@ -6,6 +6,53 @@ use Prime\Router\Route\Simple;
 
 class SimpleTest extends \PHPUnit_Framework_TestCase
 {
+    public function testInstantiation()
+    {
+        $route = new Simple('/foo');
+        $this->assertInstanceOf('Prime\Router\Route\Simple', $route);
+    }
+
+    public function testConstructorSetsDefaultsIfProvided()
+    {
+        $route = new Simple('/foo', array('bar' => 'baz'));
+        $this->assertSame(array('bar' => 'baz'), $route->getDefaults());
+    }
+
+    public function testConstructorSetsProvidedFilters()
+    {
+        $route = new Simple('/foo', array(), array('bar' => '[0-9]+'));
+        $this->assertSame(array('bar' => '[0-9]+'), $route->getFilters());
+    }
+
+    public function testSetFilterIndividually()
+    {
+        $route = new Simple('foo');
+        $this->assertSame(array(), $route->getFilters());
+
+        $route->filter('bar', '[a-z]+');
+        $filters = $route->getFilters();
+
+        $this->assertTrue(array_key_exists('bar', $filters));
+        $this->assertSame('[a-z]+', $filters['bar']);
+    }    
+
+    public function testSetAndGetFilters()
+    {
+        $route = new Simple('/foo');
+        $route->setFilters(array('bar' => '[0-9]+'));
+
+        $this->assertSame(array('bar' => '[0-9]+'), $route->getFilters());
+    }
+
+    public function testClearFilters()
+    {
+        $route = new Simple('/foo', array(), array('bar' => '.*'));
+        $this->assertSame(array('bar' => '.*'), $route->getFilters());
+
+        $route->clearFilters();
+        $this->assertSame(array(), $route->getFilters());
+    }
+
     public function testMatchNormal()
     {
         // normal route, no filters            
@@ -17,7 +64,17 @@ class SimpleTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($route->match('/test/foo'));
     }
 
-    public function testMatchWithFiltersPassedIndividually()
+    public function testMatchNamedParameterReturnsFalse()
+    {
+        $route = new Simple('/foo/{bar}', array(
+            'controller' => 'foo',
+            'action' => 'bar'
+        ));
+
+        $this->assertFalse($route->match('/bar/baz'));        
+    }
+
+    public function testMatchWithFilters()
     {
         // add filters individually
         $route = new Simple('/test/{id}', array(
@@ -30,22 +87,6 @@ class SimpleTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($route->match('/test/foo'));
         $this->assertFalse($route->match('/test/12foo'));
         $this->assertFalse($route->match('/test/foo12'));
-    }        
-
-    public function testMatchWithFiltersPassedInConstructor()
-    {
-        // add filters in constructor
-        $route = new Simple('/test/{x}', array(
-            'controller' => 'test',
-            'action' => 'x'
-        ), array(
-            'x' => '[a-zA-Z]+'
-        ));
-
-        $this->assertTrue($route->match('/test/foo'));
-        $this->assertFalse($route->match('/test/123'));
-        $this->assertFalse($route->match('/test/as123'));
-        $this->assertFalse($route->match('/test/123as'));
     }
 
     public function testMatchGetParam()
