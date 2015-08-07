@@ -64,7 +64,7 @@ class SimpleTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($route->match('/test/foo'));
     }
 
-    public function testMatchNamedParameterReturnsFalse()
+    public function testMatchDifferentNamedParameterReturnsFalse()
     {
         $route = new Simple('/foo/{bar}', array(
             'controller' => 'foo',

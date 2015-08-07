@@ -71,7 +71,7 @@ class Complex extends Simple
                                 }
                                                             
                                 $found++;
-                                if (isset($namedParams[$found])) {
+                                if (isset($namedParams[$found])) { exit('afas');
                                     $namedParams[$found] .= $part[$i+1];    
                                 } else {
                                     $namedParams[$found] = $part[$i+1];

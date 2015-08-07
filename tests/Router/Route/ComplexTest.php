@@ -6,7 +6,13 @@ use Prime\Router\Route\Complex;
 
 class ComplexTest extends \PHPUnit_Framework_TestCase
 {
-    public function testMatch()
+    public function testInstantiation()
+    {
+        $route = new Complex('/foo');
+        $this->assertInstanceOf('Prime\Router\Route\Complex', $route);
+    }
+
+    public function testMatchNormalValues()
     {
         $route = new Complex(
             '/docs/{section}/{title}.{format}', 
@@ -24,6 +30,53 @@ class ComplexTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($route->match('/docs/chapter-ten/final-words.htmla'));
         $this->assertFalse($route->match('/docs/final-words.htmla'));
         $this->assertFalse($route->match('/chapter-ten/final-words.html'));
+    }
+
+    public function testMatchDifferentNamedParameterReturnsFalse()
+    {
+        $route = new Complex('/foo/{bar}.{baz}');
+
+        $this->assertFalse($route->match('/bar/baz'));        
+    }
+
+    public function testMatchUnpairedBracketsReturnsFalse()
+    {
+        $route = new Complex('/foo/{bar}.{baz');
+
+        $this->assertFalse($route->match('/foo/baz.qux'));        
+    }
+
+    public function testMatchRouteConsistsOfOneNamedParamAndIsAccordingToFilterAndReturnsTrue()
+    {
+        $route = new Complex('/{foo}');
+        $route->filter('foo', '[a-z]+');
+
+        $this->assertTrue($route->match('/foo'));
+        $this->assertSame('foo', $route->getParam('foo'));        
+    }
+
+    public function testMatchRouteConsistsOfOneNamedParamAndIsNotAccordingToFilterAndReturnsFalse()
+    {
+        $route = new Complex('/{foo}');
+        $route->filter('foo', '[a-z]+');
+
+        $this->assertFalse($route->match('/foo1'));
+    }
+
+    public function testMatchRouteWithInterleavedOpenBracketsInsideNamedParamReturnsFalse()
+    {
+        $route = new Complex('/foo/{bar-{baz}}');
+        $route->filter('bar', '[a-z]+');
+
+        $this->assertFalse($route->match('/foo/bar-baz'));    
+    }
+
+    public function testMatchRouteWithInterleavedCloseBracketsInsideNamedParamReturnsFalse()
+    {
+        $route = new Complex('/foo/}bar-}baz{{');
+        $route->filter('bar', '[a-z]+');
+
+        $this->assertFalse($route->match('/foo/bar-baz'));    
     }
 
     public function testMatchGetParam()
