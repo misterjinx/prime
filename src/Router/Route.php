@@ -31,6 +31,11 @@ abstract class Route
         return $this; 
     }
 
+    public function getPath()
+    {
+        return $this->path;
+    }    
+
     public function getDefaults()
     {
         return $this->defaults;
@@ -43,7 +48,7 @@ abstract class Route
 
     public function getCallback()
     {
-        if (is_callable($this->defaults) || $defaults instanceof \Closure) {
+        if (is_callable($this->defaults) || $this->defaults instanceof \Closure) {
             return $this->defaults;
         }
 
