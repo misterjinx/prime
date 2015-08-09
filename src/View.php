@@ -200,6 +200,11 @@ class View implements ViewInterface
         return !empty($this->children);
     }
 
+    public function clearChildren()
+    {
+        $this->children = array();
+    }
+
     public function render($template, $data = array(), $renderChildren = true)
     {
         $engine = $this->getEngine();
