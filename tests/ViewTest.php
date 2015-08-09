@@ -202,6 +202,26 @@ class ViewTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('<div>This is a sample document</div>', $content);
     }
 
+    public function testRenderSetsProvidedVariables()
+    {
+        $vars = array('one' => 'two', 'two' => 'ten');
+        $this->view->render('layout', $vars);
+
+        $this->assertTrue(isset($this->view->one));
+        $this->assertSame('two', $this->view->one);
+
+        $this->assertTrue(isset($this->view->two));
+        $this->assertSame('ten', $this->view->two);
+    }
+
+    public function testRenderDoesNotRenderChildrenWhenThisIsNotWanted()
+    {
+        $this->view->addChild(new ViewContent('sample'));
+        $content = $this->view->render('layout', array(), false);
+
+        $this->assertSame('<div></div>', $content);
+    }
+
     /**
      * @expectedException   \InvalidArgumentException
      */

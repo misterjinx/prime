@@ -32,6 +32,16 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('baz', $this->instance->get('foo'));
     }
 
+    public function testGetCallableServiceCallbacksWithProvidedParams()
+    {
+        $this->instance->set('callme', function($param) {
+            return $param;
+        });
+
+        $return = $this->instance->get('callme', array('foo'));
+        $this->assertSame('foo', $return);
+    }
+
     /**
      * @expectedException   Prime\Container\Exception\ServiceNotFoundException
      */
