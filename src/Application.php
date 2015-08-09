@@ -90,7 +90,7 @@ class Application
         $this->container->set('emitter', $emitter);
     } 
 
-/**
+    /**
      * Execute the application and handle the request. If respond is false,
      * the Response will be returned instead of emitted directly.
      * 

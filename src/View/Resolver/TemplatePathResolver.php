@@ -82,7 +82,7 @@ class TemplatePathResolver implements ResolverInterface
     public function setFileExtension($fileExtension)
     {
         if ($fileExtension && !is_string($fileExtension)) {
-            throw \InvalidArgumentException(sprintf(
+            throw new \InvalidArgumentException(sprintf(
                 'Invalid file extension provided [%s]', $fileExtension));
         }
 
