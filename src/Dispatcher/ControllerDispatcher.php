@@ -2,6 +2,7 @@
 
 namespace Prime\Dispatcher;
 
+use Prime\Controller\ControllerResolver;
 use Prime\Dispatcher\DispatcherInterface;
 use Prime\Dispatcher\Exception\HandlerNotFoundException;
 use Psr\Http\Message\ServerRequestInterface;

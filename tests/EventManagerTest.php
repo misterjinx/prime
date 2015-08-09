@@ -158,6 +158,14 @@ class EventManagerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('on foo 1on foo 2', implode('', $responses));
     }
 
+    /**
+     * @expectedException   \InvalidArgumentException
+     */
+    public function testTriggerWithInvalidCallbackProvidedThrowsException()
+    {
+        $this->events->trigger('foo', array(), 123);
+    }
+
     public function testTriggerWithParamsListenerReturnsParams()
     {
         $this->events->attach('foo', function($ev) { return $ev->getParams(); });
