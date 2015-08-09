@@ -3,6 +3,7 @@
 namespace Prime\Controller;
 
 use Prime\Controller\ResolverInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class ControllerResolver implements ResolverInterface
 {

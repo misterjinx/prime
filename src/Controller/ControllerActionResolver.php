@@ -62,6 +62,11 @@ class ControllerActionResolver implements ResolverInterface
         $this->namespace = (string) $namespace;
     }
 
+    public function getNamespace()
+    {
+        return $this->namespace;
+    }
+
     /**
      * Get controller class name
      * 
@@ -79,7 +84,7 @@ class ControllerActionResolver implements ResolverInterface
         if (!is_string($controller)) {
             throw new \InvalidArgumentException(sprintf(
                 'Controller name has to be string, %s given', 
-                get_class($controller)));
+                gettype($controller)));
         }
 
         return $this->formatControllerClassName($controller);   
@@ -106,7 +111,7 @@ class ControllerActionResolver implements ResolverInterface
         if (!is_string($action)) {
             throw new \InvalidArgumentException(sprintf(
                 'Action name has to be string, %s given', 
-                get_class($action)));
+                gettype($action)));
         }
 
         return $this->formatActionMethodName($action);
@@ -126,7 +131,7 @@ class ControllerActionResolver implements ResolverInterface
 
     protected function camelize($string, $full = true)
     {
-        $parts = explode('_', str_replace(array('- '), '_', $string));
+        $parts = explode('_', str_replace(array('-', ' '), '_', $string));
         $camel = array_map('ucfirst', array_map('strtolower', $parts));
         
         $camelcase = implode('', $camel);
