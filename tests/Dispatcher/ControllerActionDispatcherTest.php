@@ -60,7 +60,7 @@ class ControllerActionDispatcherTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame('initbeforeaction', $return);
 
-        // @todo: incomplete, have to check that beforeaction is called also
+        // @todo: incomplete, have to check that afterAction is called also
     }
 
     /**

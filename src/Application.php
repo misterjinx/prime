@@ -6,16 +6,17 @@ use Prime\Container;
 use Prime\Container\ContainerAware;
 use Prime\Container\ContainerInterface;
 use Prime\Container\Exception\ServiceNotFoundException;
-use Prime\Router;
-use Prime\Router\Route\Exception\ResourceNotFoundException;
-use Prime\EventManager;
-use Prime\EventManager\EventManagerInterface;
-use Prime\EventManager\ResponseEvent;
-use Prime\EventManager\ResponseEventListener;
 use Prime\Controller\ControllerActionResolver;
 use Prime\Dispatcher\ControllerActionDispatcher;
 use Prime\Dispatcher\Exception\HandlerNotFoundException;
 use Prime\Dispatcher\DispatcherInterface;
+use Prime\EventManager;
+use Prime\EventManager\EventManagerInterface;
+use Prime\EventManager\ResponseEvent;
+use Prime\EventManager\ResponseEventListener;
+use Prime\Router;
+use Prime\Router\Route\Exception\ResourceNotFoundException;
+use Prime\View\ViewInterface;
 use Prime\View\ViewContentInterface;
 use Zend\Diactoros\ServerRequest;
 use Zend\Diactoros\ServerRequestFactory;
@@ -88,6 +89,16 @@ class Application
     public function setEmitter(EmitterInterface $emitter)
     {
         $this->container->set('emitter', $emitter);
+    }
+
+    public function setView(ViewInterface $view)
+    {
+        $this->container->set('view', $view);
+    }
+
+    public function getContainer()
+    {
+        return $this->container;
     } 
 
     /**
