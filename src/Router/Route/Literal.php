@@ -18,6 +18,17 @@ class Literal extends Route
     }
 
     /**
+     * For a literal route there is nothing to match against, 
+     * so return the default params 
+     * 
+     * @return array
+     */
+    public function getMatches()
+    {        
+        return $this->getDefaults();
+    }
+
+    /**
      * Being a static route there is not much to assemble
      * 
      * @param  array  $params

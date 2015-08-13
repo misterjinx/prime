@@ -43,7 +43,8 @@ abstract class Route
 
     public function getDefault($name)
     {
-        return isset($this->defaults[$name]) ? $this->defaults[$name] : false;
+        $defaults = $this->getDefaults();
+        return isset($defaults[$name]) ? $defaults[$name] : false;
     }
 
     public function getCallback()
@@ -62,7 +63,8 @@ abstract class Route
 
     public function getMatch($name)
     {
-        return isset($this->matches[$name]) ? $this->matches[$name] : false;
+        $matches = $this->getMatches();
+        return isset($matches[$name]) ? $matches[$name] : false;
     }
 
     public function clearMatches()
