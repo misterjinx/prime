@@ -72,7 +72,7 @@ class Router
                
         if (!$this->matchedRoute) {
             throw new ResourceNotFoundException(sprintf(
-                'No routes found to match [%s]', $path));
+                'No routes found to match %s', $path));
         }          
 
         return true;

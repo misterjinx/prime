@@ -14,6 +14,8 @@ use Prime\EventManager;
 use Prime\EventManager\EventManagerInterface;
 use Prime\EventManager\ResponseEvent;
 use Prime\EventManager\ResponseEventListener;
+use Prime\Http\Exception\NotFoundHttpException;
+use Prime\Http\Exception\HttpExceptionInterface;
 use Prime\Router;
 use Prime\Router\Route\Exception\ResourceNotFoundException;
 use Prime\View\ViewInterface;
@@ -140,7 +142,11 @@ class Application
         $router  = $this->container->get('router');
         $events  = $this->container->get('events');
 
-        $router->match($request);
+        try {
+            $router->match($request);
+        } catch (ResourceNotFoundException $e) {
+            throw new NotFoundHttpException($e->getMessage());
+        }            
 
         $route = $router->getMatchedRoute();
         foreach ($route->getMatches() as $param => $value) {
@@ -166,7 +172,11 @@ class Application
             $dispatcher->setContainer($this->container);
         }
 
-        $received = $dispatcher->dispatch($request, $response);
+        try {
+            $received = $dispatcher->dispatch($request, $response);
+        } catch (HandlerNotFoundException $e) {
+            throw new NotFoundHttpException($e->getMessage()); 
+        }
 
         if (!$received instanceof ResponseInterface) {
             // perhaps view content
@@ -235,10 +245,8 @@ class Application
         $response = $this->dispatch($request);
 
         $status = 500;
-
-        if ($e instanceof ResourceNotFoundException ||
-            $e instanceof HandlerNotFoundException) {
-            $status = 404;
+        if ($e instanceof HttpExceptionInterface) {
+            $status = $e->getStatusCode();
         }
 
         return $response->withStatus($status);
