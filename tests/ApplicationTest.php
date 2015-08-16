@@ -4,6 +4,7 @@ namespace Prime\Tests;
 
 use Prime\Application;
 use Prime\Container;
+use Prime\Controller\AbstractController;
 use Prime\Controller\ControllerActionResolver;
 use Prime\Dispatcher\ControllerActionDispatcher;
 use Prime\View;
@@ -68,7 +69,21 @@ class ApplicationTest extends \PHPUnit_Framework_TestCase
         $response = $this->app->run(new ServerRequest([], [], '/foobar'), false);
 
         $this->assertSame(404, $response->getStatusCode());
-        $this->assertSame('error', (string) $response->getBody());
+        $this->assertSame(
+            '404 Prime\Tests\FoobarController does not exists', 
+            (string) $response->getBody()
+        );
+    }
+
+    public function testRunHandleNoMatchThrowsHttpNotFoundExceptionWhichIsProperlyHandled()
+    {
+        $response = $this->app->run(new ServerRequest([], [], '/'), false);
+
+        $this->assertSame(404, $response->getStatusCode());
+        $this->assertSame(
+            '404 No routes found to match /',
+            (string) $response->getBody()
+        );
     }
 
     public function testDispatchedControllerReturnsViewContentWhichGetsUsedByTheResponseWithNoLayout()
@@ -102,7 +117,10 @@ class ApplicationTest extends \PHPUnit_Framework_TestCase
         $response = $this->app->run(new ServerRequest([], [], '/foo/view'), false);
 
         $this->assertSame(500, $response->getStatusCode());
-        $this->assertSame('error', (string) $response->getBody());
+        $this->assertSame(
+            '500 You returned a Prime\View\ViewContent object, but there is no view defined', 
+            (string) $response->getBody()
+        );
     }
 
     public function testDispatchedControllerReturnsDifferentObjectAndIsHandledByException()
@@ -110,7 +128,10 @@ class ApplicationTest extends \PHPUnit_Framework_TestCase
         $response = $this->app->run(new ServerRequest([], [], '/foo/dummy'), false);
 
         $this->assertSame(500, $response->getStatusCode());
-        $this->assertSame('error', (string) $response->getBody());
+        $this->assertSame(
+            '500 Controllers must return a Response object, NULL given. Please add a return statement in your controller.', 
+            (string) $response->getBody()
+        );
     }
 }
 
@@ -137,12 +158,16 @@ class FooController
     }
 }
 
-class ErrorController
+class ErrorController extends AbstractController
 {
     public function errorAction()
     {
+        $error = $this->request->getAttribute('exception');
+
         $response = new Response();
-        $response->getBody()->write('error');
+        $response->getBody()->write(
+            sprintf('%d %s', $error->getStatusCode(), $error->getMessage())
+        );
 
         return $response;        
     }

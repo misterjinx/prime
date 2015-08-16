@@ -15,6 +15,7 @@ use Prime\EventManager\EventManagerInterface;
 use Prime\EventManager\ResponseEvent;
 use Prime\EventManager\ResponseEventListener;
 use Prime\Http\Exception\NotFoundHttpException;
+use Prime\Http\Exception\InternalServerErrorHttpException;
 use Prime\Http\Exception\HttpExceptionInterface;
 use Prime\Router;
 use Prime\Router\Route\Exception\ResourceNotFoundException;
@@ -201,15 +202,15 @@ class Application
                 } catch (ServiceNotFoundException $e) {
                     throw new \LogicException(sprintf(
                         'You returned a %s object, but there is no view ' .
-                        'defined.', get_class($received)));
+                        'defined', get_class($received)));
                 }
             }
 
             if (!$received instanceof ResponseInterface) {
-                $message = 'Controllers must return a ResponseInterface ' 
+                $message = 'Controllers must return a Response ' 
                          . 'object, %s given.';
                 if ($received === null) {
-                    $message .= 'Please add a return statement in your ' 
+                    $message .= ' Please add a return statement in your ' 
                              . 'controller.';
                 }
 
@@ -234,6 +235,8 @@ class Application
      */
     protected function handleException(\Exception $e)
     {
+        $e = $this->processException($e);
+
         $request = $this->container->get('request')
                  ->withAttribute('controller', 'error')
                  ->withAttribute('action', 'error')
@@ -250,5 +253,14 @@ class Application
         }
 
         return $response->withStatus($status);
+    }
+
+    protected function processException(\Exception $e)
+    {
+        if (!$e instanceof HttpExceptionInterface) {
+            $e = new InternalServerErrorHttpException($e->getMessage(), 0, $e);
+        }
+
+        return $e;
     }
 }
