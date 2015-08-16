@@ -187,7 +187,7 @@ class ViewTest extends \PHPUnit_Framework_TestCase
         $this->view->addChild($vc);
 
         $this->assertSame(1, count($this->view->getChildren()));
-        $this->assertSame(array($vc), $this->view->getChildren());
+        $this->assertSame(array($vc->getCaptureTo() => $vc), $this->view->getChildren());
         $this->assertTrue($this->view->hasChildren());        
     }
 

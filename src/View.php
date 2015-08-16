@@ -186,7 +186,7 @@ class View implements ViewInterface
      */
     public function addChild(ViewContent $child)
     {     
-        $this->children[] = $child;
+        $this->children[$child->getCaptureTo()] = $child;
         return $this;
     }
 
