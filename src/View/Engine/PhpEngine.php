@@ -132,13 +132,23 @@ class PhpEngine implements EngineInterface
     }
 
     /**
-     * Clear all assigned variables
-     * 
+     * Clear all assigned variables or only the ones specified
+     *
+     * @param array $names clear only specified variables
      * @return void
      */
-    public function clearVars()
+    public function clearVars($names = array())
     {
-        $this->vars = array();
+        if (is_array($names) && !empty($names)) {
+            // clear only specified variables
+            foreach ($names as $name) {
+                if (isset($this->vars[$name])) {
+                    unset($this->vars[$name]);
+                }
+            }            
+        } else {
+            $this->vars = array();
+        }
     }
 
     public function render($template, $vars = array())
@@ -146,6 +156,7 @@ class PhpEngine implements EngineInterface
         $file = $this->resolver->resolve($template);
  
         if ($vars && is_array($vars)) {
+            $addedVars = array_keys($vars);
             $this->setVars($vars);
         }
 
@@ -166,8 +177,10 @@ class PhpEngine implements EngineInterface
                 $file));
         }
 
-        // remove current variables
-        $this->clearVars();
+        /// remove current set variables
+        if (isset($addedVars)) {
+            $this->clearVars($addedVars);
+        } 
 
         return $content;
     }

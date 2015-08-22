@@ -128,23 +128,34 @@ class PhpEngineTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(array(), $this->engine->getVars());
     }
 
+    public function testClearVarsOnlySpecifiedVars()
+    {
+        $this->engine->set('foo', 'bar');
+        $this->engine->set('baz', 'qux');
+        $this->assertTrue(!empty($this->engine->getVars()));
+
+        $this->engine->clearVars(array('foo'));
+        $this->assertSame(array('baz' => 'qux'), $this->engine->getVars());
+    }
+
     public function testRenderRendersTemplateAndSetsProvidedVariables()
     {
         $content = $this->engine->render('sample', array('type' => 'sample'));
         $this->assertSame('This is a sample document', $content);
     }
 
-    public function testRenderClearVarsWhenIsDone()
+    public function testRenderClearOnlyProvidedVarsWhenIsDone()
     {
         $this->engine->set('foo', 'bar');
 
         $this->assertTrue(isset($this->engine->foo));
         $this->assertSame('bar', $this->engine->get('foo'));
 
-        $this->engine->render('sample');
+        $this->engine->render('sample', array('baz' => 'qux'));
 
-        $this->assertNull($this->engine->foo);
-        $this->assertSame(array(), $this->engine->getVars());
+        $this->assertNull($this->engine->baz);
+        $this->assertSame('bar', $this->engine->foo);
+        $this->assertSame(array('foo' => 'bar'), $this->engine->getVars());
     }
 
     /**
